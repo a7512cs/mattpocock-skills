@@ -2,43 +2,61 @@
 
 這個資料夾是 repo 的繁體中文**學習用鏡像**。原文完全不動，skill 實際載入的永遠是 repo 根目錄下的英文原檔（`skills/`、`.claude-plugin/plugin.json`、`scripts/link-skills.sh` 都只看原檔）。所以翻譯只影響閱讀，不影響 skill 行為。
 
-- 翻譯基準 commit：`49dd158`（上游 `main`，v1.3.1 之後）
 - 授權：原文為 MIT License，版權屬 Matt Pocock，見根目錄 [LICENSE](../LICENSE)。
 
 ## 0. 同步上游（每次上游發 release 時做）
 
-分支安排：`main` 保持和上游一模一樣，翻譯放在 `zh-TW-translation` branch。所以同步上游永遠不會有 conflict。
+分支安排：`main` = 上游的 `main` 加上 `zh-TW/` 資料夾，是預設 branch，別人 clone 下來就有中文。上游從不碰 `zh-TW/`，所以合併永遠不會 conflict。每次同步開一條暫時的 `sync/<日期>` branch，合併回 `main` 後刪掉。
+
+不用手動記翻譯基準 commit：`main...upstream/main`（三個點）會自動從上次同步的位置開始比，只列出上游的改動，不含翻譯。
 
 通知：在 GitHub 的 `mattpocock/skills` 頁面按 Watch → Custom → Releases。
 
-1. 抓上游最新狀態（第一次要先 `git remote add upstream https://github.com/mattpocock/skills.git`）：
+1. 抓上游最新狀態，列出新的 commit 和改動的檔案（第一次要先 `git remote add upstream https://github.com/mattpocock/skills.git`）：
 
    ```bash
-   git fetch upstream --tags
+   git fetch upstream
    ```
-
-2. 看這次改了什麼。先讀新增的 `.changeset/*.md` 或 `CHANGELOG.md` 新段落（每個改動的一兩句摘要），再看檔案清單：
 
    ```bash
-   git diff --stat 49dd158..upstream/main -- '*.md'
+   git log --oneline main..upstream/main
    ```
-
-3. 合併進翻譯 branch：
 
    ```bash
-   git checkout zh-TW-translation && git merge upstream/main
+   git diff --stat main...upstream/main -- '*.md'
    ```
 
-4. 重翻。**只改英文有變動的段落，其他譯文保持不動**，這樣中文 diff 才看得出改了什麼。用 `git diff 49dd158..upstream/main -- <檔案>` 看單一檔案的英文改動。新增的檔案整份翻，刪除的檔案連譯檔一起刪。
-5. 驗證，必須全部通過：
+   先讀新增的 `.changeset/*.md` 或 `CHANGELOG.md` 新段落，它們是每個改動的一兩句摘要。
+
+2. 開同步 branch，合併上游：
+
+   ```bash
+   git switch -c sync/<日期> main
+   ```
+
+   ```bash
+   git merge upstream/main
+   ```
+
+3. 重翻。**只改英文有變動的段落，其他譯文保持不動**，這樣中文 diff 才看得出改了什麼。用 `git diff main...upstream/main -- <檔案>` 看單一檔案的英文改動（在第 2 步合併之前看，或改用 `git diff main -- <檔案>`）。新增的檔案整份翻，刪除的檔案連譯檔一起刪。
+4. 驗證，必須全部通過：
 
    ```bash
    bash zh-TW/tools/verify.sh
    ```
 
-6. 把上面的翻譯基準 commit 改成這次的 `upstream/main`，然後 commit。
+5. commit 並 push，在**自己的 repo** 開 PR 到 `main`。base repository 要選 `a7512cs/mattpocock-skills`，GitHub 預設會選上游 `mattpocock/skills`，選錯就變成發 PR 給 Matt。不想開 PR 也可以直接合併：`git switch main && git merge --ff-only sync/<日期> && git push`。
+6. 刪掉同步 branch（本機和 GitHub），再更新 plugin：
 
-`verify.sh` 檢查結構（缺檔、frontmatter、code fence、破折號、連結、粗體渲染、特殊檔名），**不會檢查譯文是否過時**。過時與否只能靠第 2 步的 diff。
+   ```bash
+   claude plugin marketplace update mattpocock
+   ```
+
+   ```bash
+   claude plugin update mattpocock-skills@mattpocock
+   ```
+
+`verify.sh` 檢查結構（缺檔、frontmatter、code fence、破折號、連結、粗體渲染、特殊檔名），**不會檢查譯文是否過時**。過時與否只能靠第 1 步的 diff。
 
 ## 1. 檔案位置
 
